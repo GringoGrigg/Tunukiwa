@@ -1,0 +1,305 @@
+<?php
+// checks if a user is logged in or not
+if (isset($_SESSION["user_id"])) {
+
+    // connect to the database
+    $mysqli = require __DIR__ . "/database.php";
+
+    // SQL query to fetch user details from the database
+    $sql = "SELECT * FROM users
+        WHERE id = {$_SESSION["user_id"]}";
+
+    // execute the query
+    $result = $mysqli->query($sql);
+
+    // fetch user details as an associative array
+    $user = $result->fetch_assoc();
+}
+
+?>
+
+<!-- Check if user is logged in -->
+<?php if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) : ?>
+    <div class="login-success">
+        <span class="success-message">WELCOME TO TUNUKIWA IMMUNIZATION SYSTEM</span>
+        <i class="active-icon"></i>
+        <a href="logout.php">Log out</a>
+    </div>
+<?php endif; ?>
+<!-- navbar.php -->
+<div class="navbar">
+    <div class="navbar-content">
+        <!-- Logo and other navigation elements -->
+
+        <!-- Online Active Icon -->
+        <div class="online-active">
+            <i class="fas fa-circle"></i>
+            <span>Online</span>
+        </div>
+
+        <!-- Other navigation elements -->
+    </div>
+</div>
+<!-- Place this code in the appropriate location within your HTML structure -->
+<form action="logout.php" method="post">
+    <button type="submit">Logout</button>
+</form>
+<!-- HTML code for navigation menu and user information -->
+<div class="container">
+    <div class="topnavigation">
+        <!-- logo -->
+        <a href="index.php"><img src="./immunization2.png" class="logo"></a>
+        <!-- navigation links -->
+        <ul style="padding: 15px; margin-right: 50px;">
+            <li>
+                <a href="booking.php">booking</a>
+                <a href="contacts.php">contacts</a>
+                <a href="aboutus.php">about us</a>
+            </li>
+        </ul>
+        <!-- if user is logged in, display a greeting message and logout button -->
+        <?php if (isset($user)) : ?>
+
+            <p style="font-size: 12px; text-align: center; padding: 15px; margin-left: -200px;">
+                Hello <?= substr($user["name"], 0, strpos($user['name'], ' ')) ?>
+            </p>
+
+            <a style="margin-left: -200px;" href="logout.php">Log out</a>
+
+        <!-- if user is not logged in, display a login link -->
+        <?php else : ?>
+
+            <a href="login.php">Log in</a>
+
+        <?php endif; ?>
+
+    </div>
+
+</div>
+<!--
+The given code is used to check whether a user is logged in or not. If a user is logged in, it displays a navigation menu with links to different pages, a greeting message, and a logout button. If a user is not logged in, it displays a link to the login page.--
+
+
+index.php
+<?php
+// Turn on error reporting to display any errors or warnings
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// At the beginning of the file
+session_start();
+
+// Check if the user is logged in
+$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+
+// Check if the user is logged in and retrieve their information from the database
+if ($is_logged_in && isset($_SESSION["user_id"])) {
+    // Require the database connection file
+    $mysqli = require __DIR__ . "/database.php";
+
+    // SQL query to select the user's information from the database
+    $sql = "SELECT * FROM users WHERE id = ?";
+
+    // Prepare the statement
+    $stmt = $mysqli->prepare($sql);
+
+    // Bind the user_id parameter and execute the query
+    $stmt->bind_param("i", $_SESSION["user_id"]);
+    $stmt->execute();
+
+    // Get the result set
+    $result = $stmt->get_result();
+
+    // Fetch the user's information from the result and store it in a variable
+    $user = $result->fetch_assoc();
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+
+    <!-- Include external CSS files for styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <?php 
+    // Include the navbar.php file to display the navigation bar
+    include __DIR__ . '/navbar.php'; 
+    ?>
+
+    <div class="container">
+        <div class="body-bg-img">
+            <div class="col-6" style="margin-left: 35%;">
+                <center><h1>TUNZWA IMMUNISATION SYSTEM</h1></center>
+            </div>
+            <div class="col-6" style="margin-left: 25%; padding-top: 100px;">
+                <center>
+                    <p>Tunukiwa Immunization System is a website designed to simplify the immunization process for children. Instead of using physical schedule books, the system allows users to book immunization dates and securely stores the information in a database. It also sends reminders to prevent missing important vaccines.</p>
+                    <p>The Tunukiwa Immunization System aims to ease the immunization process and increase immunization rates among children. Missing essential vaccines can lead to permanent disorders or even death. The system helps reduce and ultimately eradicate child deaths due to missing vaccinations.</p>
+                    <p>The Tunukiwa system provides essential facts and education on the importance of child immunization. Users can create accounts to book vaccination dates. They will receive constant reminders to ensure they do not miss their vaccination sessions.</p>
+                </center>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+login.php
+
+
+<?php
+// Set error reporting to show all errors
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+error_reporting(E_ALL);
+
+// Initialize variable to track if login attempt is invalid
+$is_invalid = false;
+
+// Check if the request method is POST
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    
+    // Require the database connection
+    $mysqli = require __DIR__ . "/database.php";
+
+    // Construct the SQL query to select the user with the email from the form
+    $sql = sprintf(
+        "SELECT * FROM users
+         WHERE email = '%s'",
+        $mysqli->real_escape_string($_POST["email"])
+    );
+
+    // Execute the query and get the result set
+    $result = $mysqli->query($sql);
+
+    // Get the first row of the result set as an associative array
+    $user = $result->fetch_assoc();
+
+    // If a user is found with the email from the form
+    if ($user) {
+
+        // Verify that the password from the form matches the hashed password in the database
+        if (password_verify($_POST["password"], $user["password_hash"])) {
+
+            // Start a new session and regenerate the session ID to prevent session fixation attacks
+            session_start();
+            session_regenerate_id();
+
+            // Set the user ID in the session
+            $_SESSION["user_id"] = $user["id"];
+
+            // After successful login
+            $_SESSION['logged_in'] = true;
+
+
+            // Redirect to the index page and exit the script
+            header("Location: login-success.php");
+            exit;
+        }
+    }
+
+    // If the login attempt is invalid, set the flag
+    $is_invalid = true;
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <meta charset="UTF-8">
+
+    <!-- Load the Google Fonts stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <!-- Load the main stylesheet -->
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="portal-bg-img">
+
+            <h1>Login</h1>
+            <div class="Login">
+            <?php if ($is_invalid) : ?>
+                    <!-- Display an error message if the login attempt is invalid -->
+                    <em>Invalid login</em>
+                <?php endif; ?>
+
+                
+                <!-- Create a form to handle the login attempt -->
+                <form method="post">
+                    <label for="email">Email</label>
+                    <input type="email" name="email" id="email" value="<?= htmlspecialchars($_POST["email"] ?? "") ?>">
+
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password">
+
+                    <button>Log in</button>
+                    <br>
+                    <a href="signup.html">Don't have an account? Sign Up</a>
+                    </br>
+                    <br>
+                    <a href="index.php">Go to Home Page</a>
+                    </br>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>
+
+
+login-success.php
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Success</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <!-- ?php include __DIR__ . '/navbar.php'; ?>-->
+    
+    <div class="row">
+        <div class="col-12">
+            <h2>Login Successful!</h2>
+            <!-- Display any additional login success message or information here -->
+        </div>
+    </div>
+</body>
+</html>
+
+
+online icon
+
+<!-- Display the online active icon -->
+<div>
+    <img src="online-icon.png" alt="Online Active" width="60" height="60">
+    <span>User is online</span>
+</div>
+
+<!-- Place this code in the appropriate location within your HTML structure -->
+<form action="logout.php" method="post">
+    <button type="submit">Logout</button>
+</form>
+
